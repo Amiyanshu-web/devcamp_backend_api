@@ -7,6 +7,7 @@ const colors=require('colors');
 //Route files
 
 const bootcamps=require('./routes/bootcamps');
+const courses=require('./routes/course');
 const ErrorHandler = require('./middleware/error');
 
 //Load env vars
@@ -28,6 +29,8 @@ if(process.env.NODE_ENV=='development'){
 
 //Mount routers
 app.use('/api/v1/bootcamps',bootcamps);
+app.use('/api/v1/courses',courses);
+
 
 //MIddleware error
 app.use(ErrorHandler);

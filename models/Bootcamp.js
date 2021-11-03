@@ -15,7 +15,7 @@ const BootcampSchema=new mongoose.Schema({
         required:[true,'Please add a description'],
         unique:true,
         trim:true,           //remove whitespaces
-        maxlength:[500,"Description can not be more than 50 characters"]
+        maxlength:[500,"Description can not be more than 500 characters"]
     },
     website:{
         type:String,
@@ -73,7 +73,7 @@ const BootcampSchema=new mongoose.Schema({
         min:[1,'Rating must be atleast 1 '],
         max:[10,'Rating can not be more than 10']
     },
-    avergaeCost:Number,
+    averageCost:Number,
     photo:{
         type:String,
         default:'no-photo.jpg'
