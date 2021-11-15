@@ -1,74 +1,19 @@
+const path=require('path');
 const Bootcamp=require('../models/Bootcamp')
 const ErrorResponse=require('../utils/errorResponse');
 const asyncHandler=require('../middleware/asyncHandler');
 const geocoder=require('../utils/geocoder');
+const advancedResult = require('../middleware/advancedResults');
+const dotenv=require('dotenv');
+dotenv.config({path:'./config/config.env'});
 //@desc         Get all bootcamps
 //@route        GET api/v1/bootcamps
 //@access       Public
 exports.getBootcamps=
    asyncHandler(async (req,res,next)=>{
-    //    console.log(req.query);
-            let quer;
-            //Copy req.query
-            const reqQuery={...req.query};
-
-            const removeFields=['select','sort','page','limit'];
-
-            removeFields.forEach(param=>delete reqQuery[param]);
-
-            //Create query string
-            let queryStr=JSON.stringify(req.query);
-
-            // Create operators ($gt,gte..etc)
-            queryStr=queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g,match=>`$${match}`);
-
-            //Finding Resource
-            quer=Bootcamp.find(JSON.parse(queryStr));
-            
-            // select which state to show
-            if(req.query.select){
-                const fields=req.query.select.split(',').join(' ');
-                quer=quer.select(fields);
-            }
-
-            //Sorting
-            if(req.query.sort){
-                 const sortBy=req.query.select.split(',').join(' ');
-                 quer=quer.sort(sortBy);    //here sort is a method similar to select method above
-            }else{
-                quer=quer.sort('-createdAt');
-            }
-
-            //Pagination
-            const page=parseInt(req.query.page,10)||1;
-            const limit=parseInt(req.query.limit,10)||25;
-            const startIndex=(page-1)*limit;
-            const endIndex=page*limit;
-
-            const total=await Bootcamp.countDocuments();
-
-            quer=quer.skip(startIndex).limit(limit);
-
-
-            //Executing Query
-           const getBootcmp=await quer;
-
-           const pagination={};
-           if(endIndex<total){
-            pagination.next={
-                page:page+1,
-                limit
-            }
-           }
-           if(startIndex>0){
-               pagination.prev={
-                   page:page-1,
-                   limit
-               }
-           }
-           console.log(queryStr);
+    
            
-    res.status(200).json({success:true,count:getBootcmp.length,pagination,data:getBootcmp});
+    res.status(200).json(res.advancedResult);
         
     
 });
@@ -125,15 +70,59 @@ exports.updateBootcamp=
 exports.deleteBootcamp=
        asyncHandler(async (req,res,next)=>{
 
-         const delBootcmp=await Bootcamp.findByIdAndDelete(req.params.id);
+         const delBootcmp=await Bootcamp.findById(req.params.id);
 
         if(!delBootcmp){
                       return next(new ErrorResponse(`Bootcamp not found with id of ${req.params.id}`,404)); //if id is not correctly formated
 
 
            }
+           delBootcmp.remove();
     res.status(200).json({success:true,data:{}});
        
+});
+
+//@desc         PhotoUpload bootcamp
+//@route        PUT api/v1/bootcamps/:id/photo
+//@access       Private
+exports.bootcampPhotoUpload=
+       asyncHandler(async (req,res,next)=>{
+
+         const bootcmp=await Bootcamp.findById(req.params.id);
+
+        if(!bootcmp){
+                      return next(new ErrorResponse(`Bootcamp not found with id of ${req.params.id}`,404)); //if id is not correctly formated
+
+
+           }
+        if(!req.files){
+            return next(new ErrorResponse('Please upload the file'),400);
+        }
+
+        //Make sure only image is uploaded
+        const file=req.files.file;
+        if(!file.mimetype.startsWith('image')){
+             return next(new ErrorResponse('Please upload a valid image file'),400);
+        }
+        //Check file size
+        if(file.size>process.env.FILE_MAX_SIZE){
+             return next(new ErrorResponse(`File Size exceeded max size limit of ${process.env.FILE_MAX_SIZE} `),400);
+
+        }
+
+        //Create custom file name
+        file.name=`photo_${req.params.id}${path.parse(file.name).ext}`;
+        file.mv(`${process.env.FILE_UPLOAD_PATH}/${file.name}`,async err=>{
+            if(err){
+                console.error(err);
+                return next(new ErrorResponse('Error with file Uplaod'),500);
+            }
+            await Bootcamp.findByIdAndUpdate(req.params.id,{photo:file.name});
+            res.status(200).json({
+                success:true,
+                data:file.name
+            });
+        });
 });
 
 //@desc         GET bootcamp

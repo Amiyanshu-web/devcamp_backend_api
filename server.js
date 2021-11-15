@@ -4,6 +4,8 @@ const dotenv=require('dotenv');
 const morgan=require('morgan');
 const connectDB=require('./config/db')
 const colors=require('colors');
+const fileupload=require('express-fileupload')
+const path=require('path');
 //Route files
 
 const bootcamps=require('./routes/bootcamps');
@@ -25,8 +27,11 @@ if(process.env.NODE_ENV=='development'){
     app.use(morgan('dev'));
 }
 
-// app.use(logger);
+app.use(fileupload());
 
+
+//static folder for uplaod
+app.use(express.static(path.join(__dirname,'public')));
 //Mount routers
 app.use('/api/v1/bootcamps',bootcamps);
 app.use('/api/v1/courses',courses);
