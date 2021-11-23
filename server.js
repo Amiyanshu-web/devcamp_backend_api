@@ -5,11 +5,13 @@ const morgan=require('morgan');
 const connectDB=require('./config/db')
 const colors=require('colors');
 const fileupload=require('express-fileupload')
+const cookieParser=require('cookie-parser');
 const path=require('path');
 //Route files
 
 const bootcamps=require('./routes/bootcamps');
 const courses=require('./routes/course');
+const auth=require('./routes/auth');
 const ErrorHandler = require('./middleware/error');
 
 //Load env vars
@@ -20,6 +22,9 @@ const app=express();
 
 //body parser
 app.use(express.json());
+
+//Cookie Parser
+app.use(cookieParser());
 
 //Dev logging middleware
 
@@ -35,6 +40,8 @@ app.use(express.static(path.join(__dirname,'public')));
 //Mount routers
 app.use('/api/v1/bootcamps',bootcamps);
 app.use('/api/v1/courses',courses);
+app.use('/api/v1/auth',auth);
+
 
 
 //MIddleware error
