@@ -45,11 +45,17 @@ exports.getCourse=
 exports.addCourse=
    asyncHandler(async (req,res,next)=>{
       req.body.bootcamp=req.params.bootcampId;
+       req.body.user=req.user.id;
     
     const bootcamp=await Bootcamp.findById(req.params.bootcampId);
       if(!bootcamp){
           return next(new ErrorResponse(`Bootcamp with id ${req.params.id} not found `),404);
       }
+      //make sure user is bootcamp owner
+      if(bootcamp.user.toString()!==req.user.id && req.user.role!=='admin' ){
+                     return next(new ErrorResponse(`Not Authorized to add a course to bootcamp`,401)); 
+
+           }
       const course=await Course.create(req.body);
 
 
@@ -67,6 +73,11 @@ exports.addCourse=
        if(!course){
            return next(new ErrorResponse(`Course not found `),404);
        }
+       //make sure user is course owner
+      if(course.user.toString()!==req.user.id && req.user.role!=='admin' ){
+                     return next(new ErrorResponse(`Not Authorized to update course to bootcamp`,401)); 
+
+           }
        res.status(200).json({success:true,data:course});
    });
    //@desc         Delete course
@@ -78,6 +89,11 @@ exports.addCourse=
        if(!course){
            return next(new ErrorResponse(`Bootcamp not found `),404);
        }
+       //make sure user is course owner
+      if(course.user.toString()!==req.user.id && req.user.role!=='admin' ){
+                     return next(new ErrorResponse(`Not Authorized to delete the course`,401)); 
+
+           }
        course.remove();
        res.status(200).json({success:true,data:{}});
    });

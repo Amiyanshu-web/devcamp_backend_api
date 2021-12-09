@@ -38,7 +38,16 @@ exports.getBootcamp=
 exports.createBootcamp=
       asyncHandler(async (req,res,next)=>{
 
-       
+       req.body.user=req.user.id;
+       //Checked for published bootcamp
+       const publishedBootcamp=await Bootcamp.findOne({user:req.user.id});
+        
+       //If user is not admin ,he can only create one bootcamp
+        if(publishedBootcamp && req.user.role!='admin'){
+            return next(new ErrorResponse(`The user with id ${req.user.id} has already published a bootcamp`),400);
+
+        }
+
             const Bootcmp=await Bootcamp.create(req.body);
     res.status(201).json({success:true,data:Bootcmp});
         
@@ -51,15 +60,21 @@ exports.updateBootcamp=
 
        asyncHandler(async (req,res,next)=>{
 
-            const updBootcmp=await Bootcamp.findByIdAndUpdate(req.params.id,req.body,{
-            new:true,
-            runValidators:true
-        });
+            let updBootcmp=await Bootcamp.findById(req.params.id);
         if(!updBootcmp){
                      return next(new ErrorResponse(`Bootcamp not found with id of ${req.params.id}`,404)); //if id is not correctly formated
 
 
            }
+           //Check if user is publisher or admin then only he can update
+           if(updBootcmp.user.toString()!==req.user.id && req.user.role!=='admin' ){
+                     return next(new ErrorResponse(`Not Authorized to update the bootcamp`,401)); 
+
+           }
+           updBootcmp=await Bootcamp.findByIdAndUpdate(req.params.id,req.body,{
+            new:true,
+            runValidators:true
+        });
     res.status(200).json({success:true,data:updBootcmp});
         
         
@@ -75,6 +90,11 @@ exports.deleteBootcamp=
         if(!delBootcmp){
                       return next(new ErrorResponse(`Bootcamp not found with id of ${req.params.id}`,404)); //if id is not correctly formated
 
+
+           }
+           //Check if user is publisher or admin then only he can delete
+           if(delBootcmp.user.toString()!==req.user.id && req.user.role!=='admin' ){
+                     return next(new ErrorResponse(`Not Authorized to delete the bootcamp`,401)); 
 
            }
            delBootcmp.remove();
@@ -93,6 +113,10 @@ exports.bootcampPhotoUpload=
         if(!bootcmp){
                       return next(new ErrorResponse(`Bootcamp not found with id of ${req.params.id}`,404)); //if id is not correctly formated
 
+
+           }
+            if(bootcmp.user.toString()!==req.user.id && req.user.role!=='admin' ){
+                     return next(new ErrorResponse(`Not Authorized to update the bootcamp`,401)); 
 
            }
         if(!req.files){
