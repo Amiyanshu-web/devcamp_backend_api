@@ -7,12 +7,19 @@ const colors=require('colors');
 const fileupload=require('express-fileupload')
 const cookieParser=require('cookie-parser');
 const path=require('path');
+const mongoSanitize = require('express-mongo-sanitize');
+const helmet = require('helmet');
+const xss = require('xss-clean');
+const rateLimit = require('express-rate-limit');
+const hpp = require('hpp');
+const cors = require('cors');
 //Route files
 
 const bootcamps=require('./routes/bootcamps');
 const courses=require('./routes/course');
 const auth=require('./routes/auth');
 const users=require('./routes/users');
+const reviews=require('./routes/reviews');
 const ErrorHandler = require('./middleware/error');
 
 //Load env vars
@@ -23,6 +30,7 @@ const app=express();
 
 //body parser
 app.use(express.json());
+
 
 //Cookie Parser
 app.use(cookieParser());
@@ -35,6 +43,26 @@ if(process.env.NODE_ENV=='development'){
 
 app.use(fileupload());
 
+//sanitize
+app.use(mongoSanitize());
+
+//Set security headers
+app.use(helmet());
+
+//xss-injection prevnt
+app.use(xss());
+
+//Rate limiting,limit number of req per user in spoecific time 
+const limiter=rateLimit({
+    windowMs:10*60*1000,   //10 mins
+    max:100
+})
+app.use(limiter);
+//hpp
+app.use(hpp());
+
+//cors
+app.use(cors());
 
 //static folder for uplaod
 app.use(express.static(path.join(__dirname,'public')));
@@ -43,6 +71,7 @@ app.use('/api/v1/bootcamps',bootcamps);
 app.use('/api/v1/courses',courses);
 app.use('/api/v1/auth',auth);
 app.use('/api/v1/users',users);
+app.use('/api/v1/reviews',reviews);
 
 
 
